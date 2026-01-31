@@ -1,0 +1,280 @@
+[cite_start]local Players = game:GetService("Players") [cite: 1]
+[cite_start]local UserInputService = game:GetService("UserInputService") [cite: 1]
+[cite_start]local TweenService = game:GetService("TweenService") [cite: 1]
+[cite_start]local ReplicatedStorage = game:GetService("ReplicatedStorage") [cite: 1]
+
+[cite_start]local player = Players.LocalPlayer [cite: 1]
+[cite_start]local playerGui = player:WaitForChild("PlayerGui") [cite: 1]
+
+[cite_start]local screenGui = Instance.new("ScreenGui") [cite: 1]
+[cite_start]screenGui.Name = "MubashirHub" -- Updated name [cite: 1]
+[cite_start]screenGui.ResetOnSpawn = false [cite: 1]
+[cite_start]screenGui.Parent = playerGui [cite: 1]
+
+[cite_start]local notification = Instance.new("Frame") [cite: 1]
+[cite_start]notification.Size = UDim2.new(0, 300, 0, 50) [cite: 1]
+[cite_start]notification.Position = UDim2.new(0.5, -150, 0, -60) [cite: 1]
+[cite_start]notification.BackgroundColor3 = Color3.fromRGB(25, 25, 25) [cite: 1]
+[cite_start]notification.BorderSizePixel = 0 [cite: 1]
+[cite_start]notification.Parent = screenGui [cite: 1]
+
+[cite_start]local notifCorner = Instance.new("UICorner") [cite: 1]
+[cite_start]notifCorner.CornerRadius = UDim.new(0, 8) [cite: 1]
+[cite_start]notifCorner.Parent = notification [cite: 1]
+
+[cite_start]local notifText = Instance.new("TextLabel") [cite: 1]
+[cite_start]notifText.Size = UDim2.new(1, 0, 1, 0) [cite: 1]
+[cite_start]notifText.BackgroundTransparency = 1 [cite: 1]
+notifText.Text = "Mubashir Hub Loaded Successfully!" [cite_start]-- Updated text [cite: 1]
+[cite_start]notifText.TextColor3 = Color3.fromRGB(255, 200, 50) [cite: 1]
+[cite_start]notifText.TextSize = 14 [cite: 1]
+[cite_start]notifText.Font = Enum.Font.Gotham [cite: 1]
+[cite_start]notifText.Parent = notification [cite: 1]
+
+[cite_start]TweenService:Create(notification, TweenInfo.new(0.4), {Position = UDim2.new(0.5, -150, 0, 15)}):Play() [cite: 1]
+[cite_start]task.wait(3.5) [cite: 1]
+[cite_start]TweenService:Create(notification, TweenInfo.new(0.4), {Position = UDim2.new(0.5, -150, 0, -60)}):Play() [cite: 1]
+[cite_start]task.wait(0.5) [cite: 1]
+[cite_start]notification:Destroy() [cite: 1]
+
+[cite_start]local mainFrame = Instance.new("Frame") [cite: 2]
+[cite_start]mainFrame.Size = UDim2.new(0, 200, 0, 240) [cite: 2]
+[cite_start]mainFrame.Position = UDim2.new(1, -220, 0.5, -120) [cite: 2]
+[cite_start]mainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20) [cite: 2]
+[cite_start]mainFrame.BorderSizePixel = 0 [cite: 2]
+[cite_start]mainFrame.Parent = screenGui [cite: 2]
+
+[cite_start]local mainCorner = Instance.new("UICorner") [cite: 2]
+[cite_start]mainCorner.CornerRadius = UDim.new(0, 10) [cite: 2]
+[cite_start]mainCorner.Parent = mainFrame [cite: 2]
+
+[cite_start]local header = Instance.new("Frame") [cite: 2]
+[cite_start]header.Size = UDim2.new(1, 0, 0, 40) [cite: 2]
+[cite_start]header.BackgroundColor3 = Color3.fromRGB(30, 30, 30) [cite: 2]
+[cite_start]header.BorderSizePixel = 0 [cite: 2]
+[cite_start]header.Parent = mainFrame [cite: 2]
+
+[cite_start]local headerCorner = Instance.new("UICorner") [cite: 2]
+[cite_start]headerCorner.CornerRadius = UDim.new(0, 10) [cite: 2]
+[cite_start]headerCorner.Parent = header [cite: 2]
+
+[cite_start]local icon = Instance.new("Frame") [cite: 2]
+[cite_start]icon.Size = UDim2.new(0, 15, 0, 15) [cite: 2]
+[cite_start]icon.Position = UDim2.new(0, 10, 0.5, -7.5) [cite: 2]
+[cite_start]icon.BackgroundColor3 = Color3.fromRGB(255, 180, 50) [cite: 2]
+[cite_start]icon.BorderSizePixel = 0 [cite: 2]
+[cite_start]icon.Parent = header [cite: 2]
+
+[cite_start]local iconCorner = Instance.new("UICorner") [cite: 2]
+[cite_start]iconCorner.CornerRadius = UDim.new(1, 0) [cite: 2]
+[cite_start]iconCorner.Parent = icon [cite: 2]
+
+[cite_start]local title = Instance.new("TextLabel") [cite: 2]
+[cite_start]title.Size = UDim2.new(1, -70, 1, 0) [cite: 2]
+[cite_start]title.Position = UDim2.new(0, 35, 0, 0) [cite: 2]
+[cite_start]title.BackgroundTransparency = 1 [cite: 2]
+[cite_start]title.Text = "MUBASHIR HUB" -- Updated title [cite: 2]
+[cite_start]title.TextColor3 = Color3.fromRGB(255, 255, 255) [cite: 3]
+[cite_start]title.TextSize = 14 [cite: 3]
+[cite_start]title.Font = Enum.Font.GothamBold [cite: 3]
+[cite_start]title.TextXAlignment = Enum.TextXAlignment.Left [cite: 3]
+[cite_start]title.Parent = header [cite: 3]
+
+[cite_start]local minimizeBtn = Instance.new("TextButton") [cite: 3]
+[cite_start]minimizeBtn.Size = UDim2.new(0, 25, 0, 25) [cite: 3]
+[cite_start]minimizeBtn.Position = UDim2.new(1, -32, 0.5, -12.5) [cite: 3]
+[cite_start]minimizeBtn.BackgroundTransparency = 1 [cite: 3]
+[cite_start]minimizeBtn.Text = "—" [cite: 3]
+[cite_start]minimizeBtn.TextColor3 = Color3.fromRGB(255, 255, 255) [cite: 3]
+[cite_start]minimizeBtn.TextSize = 16 [cite: 3]
+[cite_start]minimizeBtn.Font = Enum.Font.GothamBold [cite: 3]
+[cite_start]minimizeBtn.Parent = header [cite: 3]
+
+[cite_start]local buttonsContainer = Instance.new("Frame") [cite: 3]
+[cite_start]buttonsContainer.Size = UDim2.new(1, -20, 1, -55) [cite: 3]
+[cite_start]buttonsContainer.Position = UDim2.new(0, 10, 0, 50) [cite: 3]
+[cite_start]buttonsContainer.BackgroundTransparency = 1 [cite: 3]
+[cite_start]buttonsContainer.Parent = mainFrame [cite: 3]
+
+[cite_start]local buttonLayout = Instance.new("UIListLayout") [cite: 3]
+[cite_start]buttonLayout.SortOrder = Enum.SortOrder.LayoutOrder [cite: 3]
+[cite_start]buttonLayout.Padding = UDim.new(0, 8) [cite: 3]
+[cite_start]buttonLayout.Parent = buttonsContainer [cite: 3]
+
+local function createButton(name, layoutOrder)
+    [cite_start]local button = Instance.new("TextButton") [cite: 3]
+    [cite_start]button.Size = UDim2.new(1, 0, 0, 50) [cite: 3]
+    [cite_start]button.BackgroundColor3 = Color3.fromRGB(10, 10, 10) [cite: 3]
+    [cite_start]button.BorderSizePixel = 0 [cite: 3]
+    [cite_start]button.Text = name [cite: 4]
+    [cite_start]button.TextColor3 = Color3.fromRGB(255, 255, 255) [cite: 4]
+    [cite_start]button.TextSize = 14 [cite: 4]
+    [cite_start]button.Font = Enum.Font.Gotham [cite: 4]
+    [cite_start]button.LayoutOrder = layoutOrder [cite: 4]
+    [cite_start]button.Parent = buttonsContainer [cite: 4]
+    
+    [cite_start]local corner = Instance.new("UICorner") [cite: 4]
+    [cite_start]corner.CornerRadius = UDim.new(0, 8) [cite: 4]
+    [cite_start]corner.Parent = button [cite: 4]
+    
+    [cite_start]return button [cite: 4]
+end
+
+[cite_start]local mobileDesyncBtn = createButton("Mobile Desync", 1) [cite: 4]
+[cite_start]local flyBtn = createButton("Fly", 2) [cite: 4]
+[cite_start]local speedBoostBtn = createButton("Speed Booster", 3) [cite: 4]
+
+[cite_start]local flyEnabled = false [cite: 4]
+[cite_start]local bodyVelocity = nil [cite: 4]
+[cite_start]local bodyGyro = nil [cite: 4]
+
+[cite_start]local LocalPlayer = Players.LocalPlayer [cite: 4]
+[cite_start]local desyncActive = false [cite: 4]
+
+local function enableMobileDesync()
+    [cite_start]local success, error = pcall(function() [cite: 5]
+        [cite_start]local backpack = LocalPlayer:WaitForChild("Backpack") [cite: 5]
+        [cite_start]local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait() [cite: 5]
+        [cite_start]local humanoid = character:WaitForChild("Humanoid") [cite: 5]
+        
+        [cite_start]local packages = ReplicatedStorage:WaitForChild("Packages", 5) [cite: 5]
+        [cite_start]if not packages then return false end [cite: 5]
+        
+        [cite_start]local netFolder = packages:WaitForChild("Net", 5) [cite: 5]
+        [cite_start]if not netFolder then return false end [cite: 6]
+        
+        [cite_start]local useItemRemote = netFolder:WaitForChild("RE/UseItem", 5) [cite: 6]
+        [cite_start]local teleportRemote = netFolder:WaitForChild("RE/QuantumCloner/OnTeleport", 5) [cite: 6]
+        [cite_start]if not useItemRemote or not teleportRemote then return false end [cite: 6]
+
+        [cite_start]local toolNames = {"Quantum Cloner", "Brainrot", "brainrot"} [cite: 6]
+        [cite_start]local tool [cite: 6]
+        [cite_start]for _, toolName in ipairs(toolNames) do [cite: 6]
+            [cite_start]tool = backpack:FindFirstChild(toolName) or character:FindFirstChild(toolName) [cite: 7]
+            [cite_start]if tool then break end [cite: 7]
+        [cite_start]end [cite: 7]
+        [cite_start]if not tool then [cite: 7]
+            [cite_start]for _, item in ipairs(backpack:GetChildren()) do [cite: 7]
+                [cite_start]if item:IsA("Tool") then tool=item break end [cite: 7]
+            [cite_start]end [cite: 7]
+        [cite_start]end [cite: 8]
+
+        [cite_start]if tool and tool.Parent==backpack then [cite: 8]
+            [cite_start]humanoid:EquipTool(tool) [cite: 8]
+            [cite_start]task.wait(0.5) [cite: 8]
+        [cite_start]end [cite: 8]
+
+        [cite_start]if setfflag then setfflag("WorldStepMax", "-9999999999") end [cite: 8]
+        [cite_start]task.wait(0.2) [cite: 8]
+        [cite_start]useItemRemote:FireServer() [cite: 8]
+        [cite_start]task.wait(1) [cite: 8]
+        [cite_start]teleportRemote:FireServer() [cite: 8]
+        
+        [cite_start]task.wait(2) [cite: 9]
+        [cite_start]if setfflag then setfflag("WorldStepMax", "-1") end [cite: 9]
+        [cite_start]return true [cite: 9]
+    end)
+    [cite_start]return success [cite: 9]
+end
+
+local function disableMobileDesync()
+    [cite_start]pcall(function() [cite: 9]
+        [cite_start]if setfflag then setfflag("WorldStepMax", "-1") end [cite: 9]
+    end)
+end
+
+mobileDesyncBtn.MouseButton1Click:Connect(function()
+    [cite_start]desyncActive = not desyncActive [cite: 9]
+    [cite_start]if desyncActive then [cite: 9]
+        [cite_start]local success = enableMobileDesync() [cite: 9]
+        [cite_start]if success then [cite: 10]
+            [cite_start]mobileDesyncBtn.BackgroundColor3 = Color3.fromRGB(200, 200, 0) [cite: 10]
+        else
+            [cite_start]desyncActive=false [cite: 10]
+            [cite_start]mobileDesyncBtn.BackgroundColor3 = Color3.fromRGB(10, 10, 10) [cite: 10]
+        end
+    else
+        [cite_start]disableMobileDesync() [cite: 10]
+        [cite_start]mobileDesyncBtn.BackgroundColor3 = Color3.fromRGB(10, 10, 10) [cite: 10]
+    end
+end)
+
+LocalPlayer.CharacterAdded:Connect(function()
+    [cite_start]desyncActive=false [cite: 10]
+    [cite_start]mobileDesyncBtn.BackgroundColor3 = Color3.fromRGB(10, 10, 10) [cite: 10]
+end)
+
+flyBtn.MouseButton1Click:Connect(function()
+    [cite_start]flyEnabled = not flyEnabled [cite: 10]
+    [cite_start]local character = player.Character [cite: 11]
+    [cite_start]if not character then return end [cite: 11]
+    
+    [cite_start]local humanoidRootPart = character:FindFirstChild("HumanoidRootPart") [cite: 11]
+    [cite_start]if not humanoidRootPart then return end [cite: 11]
+    
+    [cite_start]if flyEnabled then [cite: 11]
+        [cite_start]flyBtn.BackgroundColor3 = Color3.fromRGB(50, 150, 50) [cite: 11]
+        [cite_start]bodyVelocity = Instance.new("BodyVelocity") [cite: 11]
+        [cite_start]bodyVelocity.Velocity = Vector3.new(0, 0, 0) [cite: 11]
+        [cite_start]bodyVelocity.MaxForce = Vector3.new(0, math.huge, 0) [cite: 11]
+        [cite_start]bodyVelocity.Parent = humanoidRootPart [cite: 12]
+        
+        [cite_start]bodyGyro = Instance.new("BodyGyro") [cite: 12]
+        [cite_start]bodyGyro.MaxTorque = Vector3.new(math.huge, math.huge, math.huge) [cite: 12]
+        [cite_start]bodyGyro.CFrame = humanoidRootPart.CFrame [cite: 12]
+        [cite_start]bodyGyro.Parent = humanoidRootPart [cite: 12]
+    else
+        [cite_start]flyBtn.BackgroundColor3 = Color3.fromRGB(10, 10, 10) [cite: 12]
+        [cite_start]if bodyVelocity then [cite: 13]
+            [cite_start]bodyVelocity:Destroy() [cite: 13]
+            [cite_start]bodyVelocity = nil [cite: 13]
+        end
+        [cite_start]if bodyGyro then [cite: 13]
+            [cite_start]bodyGyro:Destroy() [cite: 13]
+            [cite_start]bodyGyro = nil [cite: 13]
+        end
+    end
+end)
+
+minimizeBtn.MouseButton1Click:Connect(function()
+    [cite_start]isMinimized = not isMinimized [cite: 14]
+    [cite_start]if isMinimized then [cite: 14]
+        [cite_start]TweenService:Create(mainFrame, TweenInfo.new(0.3), {Size = UDim2.new(0, 200, 0, 40)}):Play() [cite: 14]
+        [cite_start]buttonsContainer.Visible = false [cite: 14]
+        [cite_start]minimizeBtn.Text = "+" [cite: 14]
+    else
+        [cite_start]TweenService:Create(mainFrame, TweenInfo.new(0.3), {Size = UDim2.new(0, 200, 0, 240)}):Play() [cite: 14]
+        [cite_start]buttonsContainer.Visible = true [cite: 14]
+        [cite_start]minimizeBtn.Text = "—" [cite: 14]
+    end
+end)
+
+[cite_start]local dragging = false [cite: 14]
+[cite_start]local dragInput, mousePos, framePos [cite: 14]
+
+header.InputBegan:Connect(function(input)
+    [cite_start]if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then [cite: 15]
+        [cite_start]dragging = true [cite: 15]
+        [cite_start]mousePos = input.Position [cite: 15]
+        [cite_start]framePos = mainFrame.Position [cite: 15]
+        
+        [cite_start]input.Changed:Connect(function() [cite: 15]
+            [cite_start]if input.UserInputState == Enum.UserInputState.End then [cite: 15]
+                [cite_start]dragging = false [cite: 15]
+            end
+        [cite_start]end) [cite: 16]
+    end
+end)
+
+header.InputChanged:Connect(function(input)
+    [cite_start]if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then [cite: 16]
+        [cite_start]dragInput = input [cite: 16]
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    [cite_start]if input == dragInput and dragging then [cite: 16]
+        [cite_start]local delta = input.Position - mousePos [cite: 16]
+        [cite_start]mainFrame.Position = UDim2.new(framePos.X.Scale, framePos.X.Offset + delta.X, framePos.Y.Scale, framePos.Y.Offset + delta.Y) [cite: 16]
+    end
+end)
