@@ -1,0 +1,37 @@
+-- Mubashir AutoJoiner | Full GUI + Mobile + Dragging + Buttons
+
+local Players = game:GetService("Players")
+local UIS = game:GetService("UserInputService")
+local TeleportService = game:GetService("TeleportService")
+local HttpService = game:GetService("HttpService")
+local player = Players.LocalPlayer
+
+-- GUI
+local MubashirAutojoiner = Instance.new("ScreenGui")
+MubashirAutojoiner.Name = "Mubashir AutoJoiner"
+MubashirAutojoiner.Parent = player:WaitForChild("PlayerGui")
+MubashirAutojoiner.IgnoreGuiInset = true
+MubashirAutojoiner.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+local Screen = Instance.new("Frame")
+Screen.Parent = MubashirAutojoiner
+Screen.Size = UDim2.fromScale(1,1)
+Screen.BackgroundTransparency = 1
+
+-- MAIN FRAME
+local Main = Instance.new("Frame")
+Main.Parent = Screen
+Main.Size = UDim2.new(0,165,0,220)
+Main.AnchorPoint = Vector2.new(0.5,0.5)
+Main.Position = UDim2.fromScale(0.5,0.5)
+Main.BackgroundColor3 = Color3.fromRGB(45,45,45)
+Instance.new("UICorner",Main).CornerRadius = UDim.new(0,3)
+
+-- TITLE
+local Title = Instance.new("TextLabel")
+Title.Parent = Main
+Title.Size = UDim2.new(0,130,0,50)
+Title.Position = UDim2.new(0.10,0,-0.03,0)
+Title.BackgroundTransparency = 1
+Title.Font = Enum.Font.GothamBold
+Ti
