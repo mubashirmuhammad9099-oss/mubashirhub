@@ -1,6 +1,6 @@
 --[[
-    MUBASHIR HUB - ULTIMATE
-    Default Keybind: RightAlt
+    MUBASHIR HUB - STABLE VERSION
+    Fixed Execution Logic & Auto-Loading Features
 ]]
 
 local Players = game:GetService("Players")
@@ -9,7 +9,9 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
 local player = Players.LocalPlayer
-local playerGui = player:WaitForChild("PlayerGui")
+-- Ensure character and GUI are ready before starting
+local playerGui = player:WaitForChild("PlayerGui", 10)
+if not playerGui then return end
 
 -- // CONFIGURATION //
 local currentKeybind = Enum.KeyCode.RightAlt
@@ -19,15 +21,16 @@ local lagEnabled = false
 
 -- // UI SETUP //
 local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "MubashirHubUltimate"
+screenGui.Name = "MubashirHubFixed"
 screenGui.ResetOnSpawn = false
 screenGui.Parent = playerGui
 
 local mainFrame = Instance.new("Frame")
-mainFrame.Size = UDim2.new(0, 230, 0, 420)
-mainFrame.Position = UDim2.new(0.5, -115, 0.5, -210)
+mainFrame.Size = UDim2.new(0, 230, 0, 400)
+mainFrame.Position = UDim2.new(0.5, -115, 0.5, -200)
 mainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
 mainFrame.BorderSizePixel = 0
+mainFrame.Active = true
 mainFrame.Parent = screenGui
 
 local mainCorner = Instance.new("UICorner", mainFrame)
@@ -42,24 +45,24 @@ header.Parent = mainFrame
 local title = Instance.new("TextLabel")
 title.Size = UDim2.new(1, 0, 1, 0)
 title.BackgroundTransparency = 1
-title.Text = "MUBASHIR HUB"
+title.Text = "MUBASHIR HUB FIXED"
 title.TextColor3 = Color3.fromRGB(255, 255, 255)
 title.Font = Enum.Font.GothamBold
-title.TextSize = 16
+title.TextSize = 14
 title.Parent = header
 
 local scroll = Instance.new("ScrollingFrame")
 scroll.Size = UDim2.new(1, -10, 1, -50)
 scroll.Position = UDim2.new(0, 5, 0, 45)
 scroll.BackgroundTransparency = 1
-scroll.CanvasSize = UDim2.new(0, 0, 0, 700)
-scroll.ScrollBarThickness = 3
+scroll.CanvasSize = UDim2.new(0, 0, 0, 600)
+scroll.ScrollBarThickness = 2
 scroll.Parent = mainFrame
 
 local layout = Instance.new("UIListLayout", scroll)
-layout.Padding = UDim.new(0, 6)
+layout.Padding = UDim.new(0, 5)
 
--- // UI BUILDER HELPER //
+-- // BUTTON BUILDER //
 local function createButton(name, color, callback)
     local btn = Instance.new("TextButton")
     btn.Size = UDim2.new(1, -10, 0, 35)
@@ -72,24 +75,30 @@ local function createButton(name, color, callback)
     Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
     
     btn.MouseButton1Click:Connect(function()
-        callback(btn)
+        pcall(function() callback(btn) end)
     end)
     return btn
 end
 
--- // FEATURE LOGIC //
+-- // FEATURES //
 
--- 1. Auto Block (Automatically loads the external script)
+-- 1. AUTO BLOCK (Automatic loadstring execution)
 createButton("Auto Block (GOATED)", Color3.fromRGB(40, 80, 40), function(btn)
     btn.Text = "Loading..."
-    pcall(function()
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/Tokinu/TP-BLOCK/refs/heads/main/GOATED"))()
+    task.spawn(function()
+        local success, err = pcall(function()
+            loadstring(game:HttpGet("https://raw.githubusercontent.com/Tokinu/TP-BLOCK/refs/heads/main/GOATED"))()
+        end)
+        if success then
+            btn.Text = "GOATED Active"
+        else
+            btn.Text = "Failed to Load"
+            warn(err)
+        end
     end)
-    btn.Text = "Auto Block Active"
-    btn.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
 end)
 
--- 2. Tigy Speed (Improved Toggle Logic)
+-- 2. TIGY SPEED (Stabilized)
 createButton("Tigy Speed Boost", nil, function(btn)
     if speedConnection then
         speedConnection:Disconnect()
@@ -98,72 +107,67 @@ createButton("Tigy Speed Boost", nil, function(btn)
         btn.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
     else
         btn.Text = "Tigy Speed (ON)"
-        btn.BackgroundColor3 = Color3.fromRGB(0, 120, 0)
+        btn.BackgroundColor3 = Color3.fromRGB(0, 120, 200)
         speedConnection = RunService.Heartbeat:Connect(function()
-            if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-                local hrp = player.Character.HumanoidRootPart
-                local hum = player.Character:FindFirstChildOfClass("Humanoid")
-                if hum.MoveDirection.Magnitude > 0 then
-                    -- Smooth velocity apply
-                    hrp.Velocity = Vector3.new(hum.MoveDirection.X * 50, hrp.Velocity.Y, hum.MoveDirection.Z * 50)
-                end
+            local char = player.Character
+            local hrp = char and char:FindFirstChild("HumanoidRootPart")
+            local hum = char and char:FindFirstChildOfClass("Humanoid")
+            if hrp and hum and hum.MoveDirection.Magnitude > 0 then
+                hrp.Velocity = Vector3.new(hum.MoveDirection.X * 55, hrp.Velocity.Y, hum.MoveDirection.Z * 55)
             end
         end)
     end
 end)
 
--- 3. BK Lagger
+-- 3. BK LAGGER
 createButton("BK Lagger", Color3.fromRGB(80, 20, 20), function(btn)
     lagEnabled = not lagEnabled
     btn.Text = lagEnabled and "LAGGING..." or "BK Lagger"
     task.spawn(function()
         while lagEnabled do
-            for i = 1, 30 do
-                ReplicatedStorage.Packages.Net["RE/UseItem"]:FireServer()
+            local net = ReplicatedStorage:FindFirstChild("Packages") and ReplicatedStorage.Packages:FindFirstChild("Net")
+            local useItem = net and net:FindFirstChild("RE/UseItem")
+            if useItem then
+                for i = 1, 20 do useItem:FireServer() end
             end
-            task.wait()
+            task.wait(0.1)
         end
     end)
 end)
 
--- 4. Utility
+-- 4. UTILITIES
 createButton("Fly To Base", nil, function()
-    if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-        player.Character.HumanoidRootPart.CFrame = CFrame.new(-331.9, -4.6, 19.1)
-    end
+    local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+    if hrp then hrp.CFrame = CFrame.new(-331.9, -4.6, 19.1) end
 end)
 
-createButton("Reset Desync (Kill)", Color3.fromRGB(100, 50, 0), function()
+createButton("Reset Character", Color3.fromRGB(100, 50, 0), function()
     if player.Character then player.Character:BreakJoints() end
 end)
 
--- // SETTINGS / KEYBIND //
-local divider = Instance.new("Frame", scroll)
-divider.Size = UDim2.new(1, -10, 0, 2)
-divider.BackgroundColor3 = Color3.new(0.3, 0.3, 0.3)
-
+-- // KEYBIND SYSTEM //
 local bindBtn = createButton("Bind: RightAlt", Color3.fromRGB(40, 40, 40), function() end)
-local changingBind = false
+local binding = false
 
 bindBtn.MouseButton1Click:Connect(function()
-    changingBind = true
-    bindBtn.Text = "Press any key..."
+    binding = true
+    bindBtn.Text = "..."
 end)
 
 UserInputService.InputBegan:Connect(function(input, gpe)
     if gpe then return end
-    if changingBind and input.UserInputType == Enum.UserInputType.Keyboard then
+    if binding and input.UserInputType == Enum.UserInputType.Keyboard then
         currentKeybind = input.KeyCode
         bindBtn.Text = "Bind: " .. input.KeyCode.Name
-        changingBind = false
+        binding = false
     elseif input.KeyCode == currentKeybind then
         isVisible = not isVisible
         mainFrame.Visible = isVisible
     end
 end)
 
--- // DRAGGING //
-local dragStart, startPos, dragging
+-- // DRAGGING SYSTEM //
+local dragging, dragStart, startPos
 header.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 then
         dragging = true
@@ -180,3 +184,5 @@ end)
 UserInputService.InputEnded:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end
 end)
+
+print("Mubashir Hub Fixed & Loaded.")
