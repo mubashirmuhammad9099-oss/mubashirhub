@@ -1,0 +1,174 @@
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
+
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+-- // CONFIGURATION //
+local currentKeybind = Enum.KeyCode.RightAlt
+local isVisible = true
+
+-- // UI SETUP //
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "MubashirHub_V2"
+screenGui.ResetOnSpawn = false
+screenGui.Parent = playerGui
+
+local mainFrame = Instance.new("Frame")
+mainFrame.Size = UDim2.new(0, 220, 0, 450)
+mainFrame.Position = UDim2.new(0.5, -110, 0.5, -225)
+mainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+mainFrame.BorderSizePixel = 0
+mainFrame.Parent = screenGui
+
+local mainCorner = Instance.new("UICorner", mainFrame)
+mainCorner.CornerRadius = UDim.new(0, 10)
+
+local header = Instance.new("Frame")
+header.Size = UDim2.new(1, 0, 0, 35)
+header.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+header.BorderSizePixel = 0
+header.Parent = mainFrame
+
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, 0, 1, 0)
+title.BackgroundTransparency = 1
+title.Text = "MUBASHIR HUB"
+title.TextColor3 = Color3.new(1, 1, 1)
+title.Font = Enum.Font.GothamBold
+title.TextSize = 14
+title.Parent = header
+
+local scroll = Instance.new("ScrollingFrame")
+scroll.Size = UDim2.new(1, -10, 1, -45)
+scroll.Position = UDim2.new(0, 5, 0, 40)
+scroll.BackgroundTransparency = 1
+scroll.CanvasSize = UDim2.new(0, 0, 0, 800)
+scroll.ScrollBarThickness = 2
+scroll.Parent = mainFrame
+
+local layout = Instance.new("UIListLayout", scroll)
+layout.Padding = UDim.new(0, 5)
+
+-- // HELPER: CREATE BUTTON //
+local function createButton(name, callback)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(1, 0, 0, 35)
+    btn.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+    btn.Text = name
+    btn.TextColor3 = Color3.new(1, 1, 1)
+    btn.Font = Enum.Font.Gotham
+    btn.TextSize = 12
+    btn.Parent = scroll
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
+    btn.MouseButton1Click:Connect(callback)
+    return btn
+end
+
+-- // FEATURE INTEGRATION //
+
+-- Desyncs
+createButton("Tokino Desync", function()
+    -- Logic from Tokino Desync .txt
+    settings().Physics.AllowSleep = false
+    setfflag("WorldStepMax", "-999999999")
+end)
+
+createButton("Invisible Cloner Combo", function()
+    -- Logic from Invisible Cloner .txt
+    local char = player.Character
+    local hum = char:FindFirstChildOfClass("Humanoid")
+    local cloak = player.Backpack:FindFirstChild("Invisibility Cloak")
+    local cloner = player.Backpack:FindFirstChild("Quantum Cloner")
+    if cloak and cloner then
+        hum:EquipTool(cloak)
+        cloak:Activate()
+        task.wait(0.1)
+        hum:EquipTool(cloner)
+        cloner:Activate()
+    end
+end)
+
+-- Speed
+createButton("Tigy Speed Boost", function()
+    -- Logic from Tigy Speed .txt
+    local hrp = player.Character.HumanoidRootPart
+    RunService.Heartbeat:Connect(function()
+        hrp.Velocity = hrp.Velocity + (player.Character.Humanoid.MoveDirection * 25)
+    end)
+end)
+
+-- Combat / Defense
+createButton("Auto Block", function()
+    -- Logic from Tp And Auto Block .txt
+    ReplicatedStorage.Packages.Net["RE/BlockService/ToggleBlock"]:FireServer(true)
+end)
+
+-- Utility
+createButton("Fly To Base", function()
+    player.Character.HumanoidRootPart.CFrame = CFrame.new(-331, -4, 19)
+end)
+
+createButton("BK Lagger", function()
+    -- Logic from Bk Lagger Source .txt
+    for i = 1, 1000 do
+        task.spawn(function()
+            while task.wait() do
+                ReplicatedStorage.Packages.Net["RE/UseItem"]:FireServer()
+            end
+        end)
+    end
+end)
+
+createButton("Reset Desync (Kill)", function()
+    player.Character:BreakJoints()
+end)
+
+-- // SETTINGS SECTION //
+local settingsLabel = Instance.new("TextLabel", scroll)
+settingsLabel.Size = UDim2.new(1, 0, 0, 30)
+settingsLabel.BackgroundTransparency = 1
+settingsLabel.Text = "--- SETTINGS ---"
+settingsLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
+settingsLabel.Font = Enum.Font.GothamBold
+
+local bindBtn = createButton("Bind: RightAlt", function() end)
+local changingBind = false
+
+bindBtn.MouseButton1Click:Connect(function()
+    changingBind = true
+    bindBtn.Text = "Press any key..."
+end)
+
+UserInputService.InputBegan:Connect(function(input)
+    if changingBind and input.UserInputType == Enum.UserInputType.Keyboard then
+        currentKeybind = input.KeyCode
+        bindBtn.Text = "Bind: " .. tostring(input.KeyCode.Name)
+        changingBind = false
+    elseif input.KeyCode == currentKeybind then
+        isVisible = not isVisible
+        mainFrame.Visible = isVisible
+    end
+end)
+
+-- // DRAGGING //
+local dragging, dragInput, dragStart, startPos
+header.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+        dragStart = input.Position
+        startPos = mainFrame.Position
+    end
+end)
+UserInputService.InputChanged:Connect(function(input)
+    if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+        local delta = input.Position - dragStart
+        mainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+end)
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end
+end)
