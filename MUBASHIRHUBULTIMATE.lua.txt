@@ -100,4 +100,83 @@ createButton("Tigy Speed Boost", nil, function(btn)
         btn.Text = "Tigy Speed (ON)"
         btn.BackgroundColor3 = Color3.fromRGB(0, 120, 0)
         speedConnection = RunService.Heartbeat:Connect(function()
-            if player.Character and player.Character:FindFirst
+            if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                local hrp = player.Character.HumanoidRootPart
+                local hum = player.Character:FindFirstChildOfClass("Humanoid")
+                if hum.MoveDirection.Magnitude > 0 then
+                    -- Smooth velocity apply
+                    hrp.Velocity = Vector3.new(hum.MoveDirection.X * 50, hrp.Velocity.Y, hum.MoveDirection.Z * 50)
+                end
+            end
+        end)
+    end
+end)
+
+-- 3. BK Lagger
+createButton("BK Lagger", Color3.fromRGB(80, 20, 20), function(btn)
+    lagEnabled = not lagEnabled
+    btn.Text = lagEnabled and "LAGGING..." or "BK Lagger"
+    task.spawn(function()
+        while lagEnabled do
+            for i = 1, 30 do
+                ReplicatedStorage.Packages.Net["RE/UseItem"]:FireServer()
+            end
+            task.wait()
+        end
+    end)
+end)
+
+-- 4. Utility
+createButton("Fly To Base", nil, function()
+    if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+        player.Character.HumanoidRootPart.CFrame = CFrame.new(-331.9, -4.6, 19.1)
+    end
+end)
+
+createButton("Reset Desync (Kill)", Color3.fromRGB(100, 50, 0), function()
+    if player.Character then player.Character:BreakJoints() end
+end)
+
+-- // SETTINGS / KEYBIND //
+local divider = Instance.new("Frame", scroll)
+divider.Size = UDim2.new(1, -10, 0, 2)
+divider.BackgroundColor3 = Color3.new(0.3, 0.3, 0.3)
+
+local bindBtn = createButton("Bind: RightAlt", Color3.fromRGB(40, 40, 40), function() end)
+local changingBind = false
+
+bindBtn.MouseButton1Click:Connect(function()
+    changingBind = true
+    bindBtn.Text = "Press any key..."
+end)
+
+UserInputService.InputBegan:Connect(function(input, gpe)
+    if gpe then return end
+    if changingBind and input.UserInputType == Enum.UserInputType.Keyboard then
+        currentKeybind = input.KeyCode
+        bindBtn.Text = "Bind: " .. input.KeyCode.Name
+        changingBind = false
+    elseif input.KeyCode == currentKeybind then
+        isVisible = not isVisible
+        mainFrame.Visible = isVisible
+    end
+end)
+
+-- // DRAGGING //
+local dragStart, startPos, dragging
+header.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+        dragStart = input.Position
+        startPos = mainFrame.Position
+    end
+end)
+UserInputService.InputChanged:Connect(function(input)
+    if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+        local delta = input.Position - dragStart
+        mainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+end)
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end
+end)
