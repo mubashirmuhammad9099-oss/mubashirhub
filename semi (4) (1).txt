@@ -1,5 +1,4 @@
---// Mubashir Instant Steal
---// Draggable | Purple | Auto Save Position (FIXED)
+--// Mubashir's Instant Steal (Coexist-Safe)
 
 --==============================
 -- SERVICES
@@ -11,81 +10,58 @@ local UserInputService = game:GetService("UserInputService")
 local LocalPlayer = Players.LocalPlayer
 
 --==============================
--- CONFIG
+-- STATE
 --==============================
-local STAND_SIZE = Vector3.new(2, 3, 2)
-local STAND_POSITION = Vector3.new(-336.364, -5.093, 99.374)
-
+local savedPosition
 local teleportEnabled = false
-local keybind = nil
-local standPart
+local keybind
 
 --==============================
--- STAND ESP
+-- SAFE GUI CLEANUP (ONLY OUR GUI)
 --==============================
-local function createStand()
-    if standPart then standPart:Destroy() end
+local GUI_NAME = "Mubashir_InstantSteal_GUI"
+if game.CoreGui:FindFirstChild(GUI_NAME) then
+    game.CoreGui[GUI_NAME]:Destroy()
+end
 
-    standPart = Instance.new("Part")
-    standPart.Name = "InstantStealESP"
-    standPart.Size = STAND_SIZE
-    standPart.Anchored = true
-    standPart.CanCollide = false
-    standPart.Transparency = 1
-    standPart.Position = STAND_POSITION
-    standPart.Parent = Workspace
+--==============================
+-- ESP
+--==============================
+local function createESP()
+    if Workspace:FindFirstChild("MubashirInstantStealESP") then
+        Workspace.MubashirInstantStealESP:Destroy()
+    end
+    if not savedPosition then return end
+
+    local p = Instance.new("Part")
+    p.Name = "MubashirInstantStealESP"
+    p.Anchored = true
+    p.CanCollide = false
+    p.Transparency = 1
+    p.Size = Vector3.new(2,3,2)
+    p.Position = savedPosition
+    p.Parent = Workspace
 
     local box = Instance.new("BoxHandleAdornment")
-    box.Adornee = standPart
-    box.Size = STAND_SIZE
+    box.Adornee = p
+    box.Size = p.Size
     box.AlwaysOnTop = true
-    box.ZIndex = 10
+    box.Transparency = 0.45
     box.Color3 = Color3.fromRGB(170, 0, 255)
-    box.Transparency = 0.35
-    box.Parent = standPart
-
-    local billboard = Instance.new("BillboardGui")
-    billboard.Size = UDim2.new(0, 140, 0, 28)
-    billboard.StudsOffset = Vector3.new(0, STAND_SIZE.Y / 2 + 0.8, 0)
-    billboard.AlwaysOnTop = true
-    billboard.Parent = standPart
-
-    local label = Instance.new("TextLabel")
-    label.Size = UDim2.fromScale(1, 1)
-    label.BackgroundTransparency = 1
-    label.Text = "INSTANT STEAL"
-    label.Font = Enum.Font.GothamBold
-    label.TextScaled = true
-    label.TextColor3 = Color3.new(1, 1, 1)
-    label.TextStrokeTransparency = 0
-    label.Parent = billboard
+    box.Parent = p
 end
 
 --==============================
--- TELEPORT
+-- TELEPORT (ON-DEMAND ONLY)
 --==============================
-local function teleportToStand()
-    if not teleportEnabled then return end
+local function teleport()
+    if not teleportEnabled or not savedPosition then return end
     local char = LocalPlayer.Character
     if not char then return end
 
     local hrp = char:FindFirstChild("HumanoidRootPart")
     if hrp then
-        hrp.CFrame = CFrame.new(STAND_POSITION + Vector3.new(0, 2, 0))
-    end
-end
-
---==============================
--- SAVE CURRENT POSITION
---==============================
-local function saveCurrentPosition()
-    local char = LocalPlayer.Character
-    if not char then return end
-
-    local hrp = char:FindFirstChild("HumanoidRootPart")
-    if hrp then
-        STAND_POSITION = hrp.Position
-        createStand()
+        hrp.CFrame = CFrame.new(savedPosition + Vector3.new(0,2,0))
     end
 end
 
@@ -93,126 +69,113 @@ end
 -- GUI
 --==============================
 local gui = Instance.new("ScreenGui")
-gui.Name = "MubashirInstantStealGUI"
+gui.Name = GUI_NAME
 gui.ResetOnSpawn = false
 gui.Parent = game.CoreGui
 
 local frame = Instance.new("Frame", gui)
-frame.Size = UDim2.new(0, 170, 0, 200)
-frame.Position = UDim2.new(0.5, -85, 0.5, -100)
-frame.BackgroundColor3 = Color3.fromRGB(25, 10, 40)
+frame.Size = UDim2.new(0, 180, 0, 185)
+frame.Position = UDim2.new(1, -200, 0.5, -90)
+frame.BackgroundColor3 = Color3.fromRGB(70, 0, 110)
 frame.Active = true
 frame.Draggable = true
-frame.ZIndex = 2
+
 Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 10)
 
 -- Header
 local header = Instance.new("TextLabel", frame)
-header.Size = UDim2.new(1, 0, 0, 34)
-header.BackgroundColor3 = Color3.fromRGB(100, 0, 160)
+header.Size = UDim2.new(1, 0, 0, 28)
+header.BackgroundColor3 = Color3.fromRGB(110, 0, 170)
 header.Text = "Instant Steal"
 header.Font = Enum.Font.GothamBold
-header.TextSize = 15
+header.TextSize = 14
 header.TextColor3 = Color3.new(1,1,1)
-header.ZIndex = 3
-Instance.new("UICorner", header).CornerRadius = UDim.new(0, 10)
+Instance.new("UICorner", header)
 
 -- Status
-local statusLabel = Instance.new("TextLabel", frame)
-statusLabel.Position = UDim2.new(0, 10, 0, 42)
-statusLabel.Size = UDim2.new(1, -20, 18)
-statusLabel.BackgroundTransparency = 1
-statusLabel.Text = "Status: OFF"
-statusLabel.Font = Enum.Font.GothamMedium
-statusLabel.TextSize = 13
-statusLabel.TextColor3 = Color3.fromRGB(255,120,120)
-statusLabel.TextXAlignment = Enum.TextXAlignment.Left
-statusLabel.ZIndex = 3
+local status = Instance.new("TextLabel", frame)
+status.Position = UDim2.new(0, 10, 0, 38)
+status.Size = UDim2.new(1, -20, 0, 18)
+status.BackgroundTransparency = 1
+status.Text = "OFF"
+status.TextColor3 = Color3.fromRGB(255,120,120)
+status.Font = Enum.Font.Gotham
+status.TextSize = 12
 
--- Toggle Button
-local toggleBtn = Instance.new("TextButton", frame)
-toggleBtn.Position = UDim2.new(0, 10, 0, 65)
-toggleBtn.Size = UDim2.new(1, -20, 34)
-toggleBtn.Text = "TOGGLE"
-toggleBtn.Font = Enum.Font.GothamBold
-toggleBtn.TextSize = 14
-toggleBtn.TextColor3 = Color3.new(1,1,1)
-toggleBtn.BackgroundColor3 = Color3.fromRGB(130, 0, 200)
-toggleBtn.ZIndex = 5
-Instance.new("UICorner", toggleBtn)
+-- Toggle
+local toggle = Instance.new("TextButton", frame)
+toggle.Position = UDim2.new(0, 10, 0, 60)
+toggle.Size = UDim2.new(1, -20, 0, 30)
+toggle.Text = "TOGGLE"
+toggle.Font = Enum.Font.GothamBold
+toggle.TextSize = 13
+toggle.TextColor3 = Color3.new(1,1,1)
+toggle.BackgroundColor3 = Color3.fromRGB(160, 0, 230)
+Instance.new("UICorner", toggle)
 
-toggleBtn.MouseButton1Click:Connect(function()
+toggle.MouseButton1Click:Connect(function()
     teleportEnabled = not teleportEnabled
-    statusLabel.Text = teleportEnabled and "Status: ON" or "Status: OFF"
-    statusLabel.TextColor3 = teleportEnabled
-        and Color3.fromRGB(150,255,150)
-        or Color3.fromRGB(255,120,120)
-    teleportToStand()
+    if teleportEnabled then
+        status.Text = "ON"
+        status.TextColor3 = Color3.fromRGB(120,255,120)
+        teleport()
+    else
+        status.Text = "OFF"
+        status.TextColor3 = Color3.fromRGB(255,120,120)
+    end
 end)
 
--- Save Position Button
-local saveBtn = Instance.new("TextButton", frame)
-saveBtn.Position = UDim2.new(0, 10, 0, 105)
-saveBtn.Size = UDim2.new(1, -20, 34)
-saveBtn.Text = "SET HERE"
-saveBtn.Font = Enum.Font.GothamBold
-saveBtn.TextSize = 14
-saveBtn.TextColor3 = Color3.new(1,1,1)
-saveBtn.BackgroundColor3 = Color3.fromRGB(170, 0, 240)
-saveBtn.ZIndex = 5
-Instance.new("UICorner", saveBtn)
+-- Save Position
+local save = Instance.new("TextButton", frame)
+save.Position = UDim2.new(0, 10, 0, 100)
+save.Size = UDim2.new(1, -20, 0, 30)
+save.Text = "SET POSITION"
+save.Font = Enum.Font.GothamBold
+save.TextSize = 12
+save.TextColor3 = Color3.new(1,1,1)
+save.BackgroundColor3 = Color3.fromRGB(120, 0, 200)
+Instance.new("UICorner", save)
 
-saveBtn.MouseButton1Click:Connect(saveCurrentPosition)
+save.MouseButton1Click:Connect(function()
+    local char = LocalPlayer.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    if hrp then
+        savedPosition = hrp.Position
+        createESP()
+    end
+end)
 
--- Keybind Button
-local keybindBtn = Instance.new("TextButton", frame)
-keybindBtn.Position = UDim2.new(0, 10, 0, 145)
-keybindBtn.Size = UDim2.new(1, -20, 32)
-keybindBtn.Text = "KEY: NONE"
-keybindBtn.Font = Enum.Font.GothamMedium
-keybindBtn.TextSize = 13
-keybindBtn.TextColor3 = Color3.new(1,1,1)
-keybindBtn.BackgroundColor3 = Color3.fromRGB(80, 0, 140)
-keybindBtn.ZIndex = 5
-Instance.new("UICorner", keybindBtn)
+-- Keybind
+local keyBtn = Instance.new("TextButton", frame)
+keyBtn.Position = UDim2.new(0, 10, 0, 140)
+keyBtn.Size = UDim2.new(1, -20, 0, 30)
+keyBtn.Text = "KEY: NONE"
+keyBtn.Font = Enum.Font.GothamBold
+keyBtn.TextSize = 11
+keyBtn.TextColor3 = Color3.new(1,1,1)
+keyBtn.BackgroundColor3 = Color3.fromRGB(90, 0, 150)
+Instance.new("UICorner", keyBtn)
 
-keybindBtn.MouseButton1Click:Connect(function()
-    keybindBtn.Text = "PRESS KEY..."
-    keybindBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 255)
-
+keyBtn.MouseButton1Click:Connect(function()
+    keyBtn.Text = "PRESS KEY"
     local conn
     conn = UserInputService.InputBegan:Connect(function(input, gp)
         if gp then return end
         if input.UserInputType == Enum.UserInputType.Keyboard then
             keybind = input.KeyCode
-            keybindBtn.Text = "KEY: " .. keybind.Name
-            keybindBtn.BackgroundColor3 = Color3.fromRGB(80, 0, 140)
+            keyBtn.Text = "KEY: "..keybind.Name
             conn:Disconnect()
         end
     end)
 end)
 
---==============================
--- KEYBIND LISTENER
---==============================
+-- Scoped keybind listener (non-blocking)
 UserInputService.InputBegan:Connect(function(input, gp)
     if gp then return end
     if keybind and input.KeyCode == keybind then
         teleportEnabled = not teleportEnabled
-        teleportToStand()
+        teleport()
     end
 end)
 
---==============================
--- INIT
---==============================
-LocalPlayer.CharacterAdded:Connect(function()
-    task.wait(0.5)
-    createStand()
-end)
-
-if LocalPlayer.Character then
-    createStand()
-end
-
-print("[Mubashir] Instant Steal loaded.")
+print("[Mubashir Instant Steal] Loaded safely")
