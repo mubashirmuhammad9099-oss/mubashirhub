@@ -1,0 +1,677 @@
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local CoreGui = game:GetService("CoreGui")
+local TweenService = game:GetService("TweenService")
+local ProximityPromptService = game:GetService("ProximityPromptService")
+local HttpService = game:GetService("HttpService")
+local LocalPlayer = Players.LocalPlayer
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
+
+local ConfigName = "LimitedHub_Config.json"
+local blacklistedNames = {
+    "PlaceCooldownFromChat", "AdminPanelService", "AdminPanel",
+    "IntegrityCheckProcessor", "LocalizationTableAnalyticsSender",
+    "LocalizationService", "Analytics", "Telemetry", "Logger",
+    "Reporter", "CanChatWith", "SetPlayerBlockList", "UpdatePlayerBlockList",
+    "NewPlayerGroupDetails", "NewPlayerCanManageDetails", "SendPlayerBlockList",
+    "UpdateLocalPlayerBlockList", "SendPlayerProfileSettings",
+    "RequestPlayerProfileSettings", "UpdatePlayerProfileSettings",
+    "ShowFriendJoinedPlayerToast", "ShowPlayerJoinedFriendsToast",
+    "CreateOrJoinParty", "ServerSideBulkPurchaseEvent", "SetDialogInUse",
+    "ContactListInvokeIrisInvite", "ContactListIrisInviteTeleport",
+    "UpdateCurrentCall", "RequestDeviceCameraOrientationCapability",
+    "ReceiveLikelySpeakingUsers", "ReferredPlayerJoin", "Update",
+    "RE/Tools/Cooldown", "RE/FuseMachine/RevealNow", "RE/FuseMachine/FuseAnimation",
+    "RE/NotificationService/Notify", "RE/PlotService/ClaimCoins",
+    "RE/PlotService/Sell", "RE/PlotService/Open", "RE/PlotService/ToggleFriends",
+    "RE/PlotService/CashCollected", "RE/ChatService/ChatMessage",
+    "RE/SoundService/PlayClientSound", "RE/Snapshot/RealiableChannel",
+    "RE/CommandsService/OpenCommandBar", "RE/92e5a494-0ab4-4c4e-ae6b-96e5f4a2a698",
+    "92e5a494-0ab4-4c4e-ae6b-96e5f4a2a698", "6411a778-07a5-4513-b1c7-60b65ae05ac8",
+    "RE/GameService/SpawnEffect", "RE/Leaderboard/ReplicateDisplayNames",
+    "eb9dee81-7718-4020-b6b2-219888488d13", "fce51e06-a587-4ff0-9e19-869eb1859a01",
+    "680db8c7-c46a-492c-b451-6e980910902c", "RE/StealService/Grab",
+    "RE/PlotService/Place", "RE/StealService/StealingSuccess",
+    "RE/StealService/StealingFailure", "RE/CombatService/ApplyImpulse",
+    "RE/InventoryService/Sort", "RE/StockEventService/SetFocused",
+    "RE/StockEventService/Return", "RE/StockEventService/Redeem",
+    "RE/MerchantService/SetFocused", "RE/MerchantService/Animation",
+    "RE/SantaMerchantService/SetFocused", "RE/SantaMerchantService/Animation",
+    "RE/SantaMerchantService/CollectGoldElf", "RE/ShopService/Purchase",
+    "RE/TutorialService/StartTutorial", "RE/TutorialService/FinishTutorial",
+    "RE/TeleportService/Reconnect"
+}
+local priorityTargets = {
+    "WhyAreTheyTargetingMe!!", "FisherMan", "Chat", "AFK", "CookiesService"
+}
+
+local Settings = {
+    LagEnabled = false,
+    IsAutoLagging = false,
+    AntiDeathEnabled = true,
+    PacketRate = 5,
+    MaxPacketRate = 50,
+   
+    SpeedEnabled = false,
+    SpeedValue = 27,
+    MinSpeed = 27,
+    MaxSpeed = 55,
+   
+    AutoLagOnPrompt = false,
+    LagStartDelay = 0.5,
+    LagDuration = 1.0,
+}
+
+local function SaveConfig()
+    local data = {
+        PacketRate = Settings.PacketRate,
+        SpeedValue = Settings.SpeedValue,
+        AutoLagOnPrompt = Settings.AutoLagOnPrompt,
+        LagStartDelay = Settings.LagStartDelay,
+        LagDuration = Settings.LagDuration,
+        AntiDeathEnabled = Settings.AntiDeathEnabled
+    }
+   
+    local success, json = pcall(function() return HttpService:JSONEncode(data) end)
+    if success then
+        if writefile then
+            writefile(ConfigName, json)
+        end
+    end
+end
+
+local function LoadConfig()
+    if not isfile or not readfile then return end
+    if isfile(ConfigName) then
+        local content = readfile(ConfigName)
+        local success, result = pcall(function() return HttpService:JSONDecode(content) end)
+       
+        if success and result then
+            if result.PacketRate then Settings.PacketRate = result.PacketRate end
+            if result.SpeedValue then Settings.SpeedValue = result.SpeedValue end
+            if result.AutoLagOnPrompt ~= nil then Settings.AutoLagOnPrompt = result.AutoLagOnPrompt end
+            if result.LagStartDelay then Settings.LagStartDelay = result.LagStartDelay end
+            if result.LagDuration then Settings.LagDuration = result.LagDuration end
+            if result.AntiDeathEnabled ~= nil then Settings.AntiDeathEnabled = result.AntiDeathEnabled end
+        end
+    end
+end
+
+LoadConfig()
+
+local ToggleLagVisuals = nil
+local ToggleSpeedVisuals = nil
+
+local function isMyBase(plotName)
+    local plot = workspace.Plots:FindFirstChild(plotName)
+    if not plot then return false end
+    local sign = plot:FindFirstChild("PlotSign")
+    if sign then
+        local yourBase = sign:FindFirstChild("YourBase")
+        if yourBase and yourBase:IsA("BillboardGui") then
+            return yourBase.Enabled == true
+        end
+    end
+    return false
+end
+
+local function isOnMyCashPad()
+    local char = LocalPlayer.Character
+    if not char then return false end
+    local root = char:FindFirstChild("HumanoidRootPart")
+    if not root then return false end
+    local plotsFolder = workspace:FindFirstChild("Plots")
+    if not plotsFolder then return false end
+   
+    for _, plot in ipairs(plotsFolder:GetChildren()) do
+        if plot:IsA("Model") then
+             local sign = plot:FindFirstChild("PlotSign")
+             if sign and sign:FindFirstChild("YourBase") and sign.YourBase.Enabled then
+                local cashPad = plot:FindFirstChild("CashPad", true)
+                if cashPad then
+                    local cashPos = cashPad:GetPivot().Position
+                    if (root.Position - cashPos).Magnitude <= 5.5 then
+                        return true
+                    end
+                end
+             end
+        end
+    end
+    return false
+end
+
+local function handleAntiDeath()
+    if not Settings.AntiDeathEnabled then return end
+    local char = LocalPlayer.Character
+    if not char then return end
+    local hum = char:FindFirstChild("Humanoid")
+    if not hum then return end
+    hum:SetStateEnabled(Enum.HumanoidStateType.Dead, false)
+    hum:SetStateEnabled(Enum.HumanoidStateType.FallingDown, false)
+    if hum.Health <= 0 then
+        hum.Health = 100
+        if hum:GetState() == Enum.HumanoidStateType.Dead then
+            hum:ChangeState(Enum.HumanoidStateType.Running)
+        end
+        local root = char:FindFirstChild("HumanoidRootPart")
+        if root and root.Position.Y < -50 then
+            root.CFrame = CFrame.new(0, 25, 0)
+            root.Velocity = Vector3.new(0, 0, 0)
+        end
+    end
+    if hum.Health < 50 then hum.Health = math.min(hum.Health + 10, 100) end
+    for _, track in pairs(hum:GetPlayingAnimationTracks()) do
+        local name = track.Name:lower()
+        if name:find("death") or name:find("die") or name:find("dead") or name:find("fall") then
+            track:Stop()
+        end
+    end
+    if hum:GetState() == Enum.HumanoidStateType.FallingDown or hum:GetState() == Enum.HumanoidStateType.Dead then
+        hum:ChangeState(Enum.HumanoidStateType.Running)
+    end
+end
+
+local function findTarget()
+    local foundRemotes = {}
+    for _, v in pairs(game:GetDescendants()) do
+        if v:IsA("RemoteEvent") then
+            local fullName = v:GetFullName()
+            local remoteName = v.Name
+            local isBlacklisted = false
+            for _, blacklisted in ipairs(blacklistedNames) do
+                if string.find(fullName, blacklisted, 1, true) or string.find(remoteName, blacklisted, 1, true) then
+                    isBlacklisted = true
+                    break
+                end
+            end
+            if not isBlacklisted then
+                for _, priority in ipairs(priorityTargets) do
+                    if string.find(remoteName, priority, 1, true) then
+                        return v
+                    end
+                end
+                table.insert(foundRemotes, v)
+            end
+        end
+    end
+    return #foundRemotes > 0 and foundRemotes[1] or nil
+end
+
+local TargetRemote = findTarget()
+
+local lagTask = nil
+ProximityPromptService.PromptButtonHoldBegan:Connect(function(prompt, playerWhoTriggered)
+    if playerWhoTriggered ~= LocalPlayer then return end
+    local char = LocalPlayer.Character
+    local backpack = LocalPlayer:FindFirstChild("Backpack")
+    if backpack and char then
+        local tool = backpack:FindFirstChild("Flash Teleport")
+        if tool and tool:IsA("Tool") then tool.Parent = char end
+    end
+    if Settings.AutoLagOnPrompt then
+        if lagTask then task.cancel(lagTask) end
+        lagTask = task.spawn(function()
+            task.wait(Settings.LagStartDelay)
+            Settings.IsAutoLagging = true
+            if ToggleLagVisuals then ToggleLagVisuals() end
+            task.wait(Settings.LagDuration)
+            Settings.IsAutoLagging = false
+            if ToggleLagVisuals then ToggleLagVisuals() end
+        end)
+    end
+end)
+
+ProximityPromptService.PromptButtonHoldEnded:Connect(function(prompt, playerWhoTriggered)
+    if playerWhoTriggered ~= LocalPlayer then return end
+    local char = LocalPlayer.Character
+    if char then
+        local tool = char:FindFirstChild("Flash Teleport")
+        if tool and tool:IsA("Tool") then tool:Activate() end
+    end
+end)
+
+for _, g in pairs(CoreGui:GetChildren()) do
+    if g.Name == "LimitedHubGlass" then g:Destroy() end
+end
+for _, g in pairs(PlayerGui:GetChildren()) do
+    if g.Name == "LimitedHubGlass" then g:Destroy() end
+end
+
+local GUI = Instance.new("ScreenGui")
+GUI.Name = "LimitedHubGlass"
+GUI.ResetOnSpawn = false
+GUI.IgnoreGuiInset = true
+pcall(function() GUI.Parent = CoreGui end)
+if not GUI.Parent then GUI.Parent = PlayerGui end
+
+local GlassTheme = {
+    Background = Color3.fromRGB(20, 20, 20),
+    Transparency = 0.25,
+    Accent = Color3.fromRGB(255, 215, 0),
+    AccentDim = Color3.fromRGB(80, 70, 0),
+    TextWhite = Color3.fromRGB(255, 255, 255),
+    TextGray = Color3.fromRGB(180, 180, 180),
+}
+
+local MainFrame = Instance.new("Frame")
+MainFrame.Name = "MainFrame"
+MainFrame.Size = UDim2.new(0, 260, 0, 520)
+MainFrame.Position = UDim2.new(0.5, -130, 0.5, -260)
+MainFrame.BackgroundColor3 = GlassTheme.Background
+MainFrame.BackgroundTransparency = GlassTheme.Transparency
+MainFrame.BorderSizePixel = 0
+MainFrame.ClipsDescendants = false
+MainFrame.Parent = GUI
+local UIScale = Instance.new("UIScale")
+UIScale.Scale = 0.6
+UIScale.Parent = MainFrame
+
+
+local MainCorner = Instance.new("UICorner")
+MainCorner.CornerRadius = UDim.new(0, 16)
+MainCorner.Parent = MainFrame
+
+local MainStroke = Instance.new("UIStroke")
+MainStroke.Thickness = 1.5
+MainStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+MainStroke.Color = Color3.fromRGB(80, 80, 80)
+MainStroke.Transparency = 0.4
+MainStroke.Parent = MainFrame
+
+local BgGradient = Instance.new("UIGradient")
+BgGradient.Rotation = 45
+BgGradient.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(40, 40, 40)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(10, 10, 10))
+})
+BgGradient.Parent = MainFrame
+
+local ProfileContainer = Instance.new("Frame")
+ProfileContainer.Size = UDim2.new(1, -20, 0, 60)
+ProfileContainer.Position = UDim2.new(0, 10, 0, 10)
+ProfileContainer.BackgroundTransparency = 1
+ProfileContainer.Parent = MainFrame
+
+local AvatarFrame = Instance.new("ImageLabel")
+AvatarFrame.Size = UDim2.new(0, 45, 0, 45)
+AvatarFrame.Position = UDim2.new(0, 0, 0.5, -22.5)
+AvatarFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+AvatarFrame.BackgroundTransparency = 0.5
+AvatarFrame.Image = Players:GetUserThumbnailAsync(LocalPlayer.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size420x420)
+AvatarFrame.Parent = ProfileContainer
+
+local AvatarCorner = Instance.new("UICorner")
+AvatarCorner.CornerRadius = UDim.new(1, 0)
+AvatarCorner.Parent = AvatarFrame
+
+local AvatarStroke = Instance.new("UIStroke")
+AvatarStroke.Thickness = 1.5
+AvatarStroke.Color = GlassTheme.Accent
+AvatarStroke.Parent = AvatarFrame
+
+local UserLabel = Instance.new("TextLabel")
+UserLabel.Size = UDim2.new(1, -60, 0, 20)
+UserLabel.Position = UDim2.new(0, 55, 0, 5)
+UserLabel.BackgroundTransparency = 1
+UserLabel.Text = LocalPlayer.Name
+UserLabel.Font = Enum.Font.GothamBold
+UserLabel.TextSize = 14
+UserLabel.TextColor3 = GlassTheme.TextWhite
+UserLabel.TextXAlignment = Enum.TextXAlignment.Left
+UserLabel.Parent = ProfileContainer
+
+local StatusLabel = Instance.new("TextLabel")
+StatusLabel.Size = UDim2.new(1, -60, 0, 15)
+StatusLabel.Position = UDim2.new(0, 55, 0, 25)
+StatusLabel.BackgroundTransparency = 1
+StatusLabel.Text = "Config Loaded"
+StatusLabel.Font = Enum.Font.Gotham
+StatusLabel.TextSize = 10
+StatusLabel.TextColor3 = GlassTheme.Accent
+StatusLabel.TextXAlignment = Enum.TextXAlignment.Left
+StatusLabel.Parent = ProfileContainer
+
+local Separator = Instance.new("Frame")
+Separator.Size = UDim2.new(1, -30, 0, 1)
+Separator.Position = UDim2.new(0, 15, 0, 70)
+Separator.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+Separator.BackgroundTransparency = 0.8
+Separator.BorderSizePixel = 0
+Separator.Parent = MainFrame
+
+local Content = Instance.new("ScrollingFrame")
+Content.Size = UDim2.new(1, -20, 1, -110)
+Content.Position = UDim2.new(0, 10, 0, 80)
+Content.BackgroundTransparency = 1
+Content.BorderSizePixel = 0
+Content.ScrollBarThickness = 2
+Content.ScrollBarImageColor3 = GlassTheme.Accent
+Content.CanvasSize = UDim2.new(0, 0, 0, 0)
+Content.AutomaticCanvasSize = Enum.AutomaticSize.Y
+Content.Parent = MainFrame
+
+local UIList = Instance.new("UIListLayout")
+UIList.Padding = UDim.new(0, 8)
+UIList.SortOrder = Enum.SortOrder.LayoutOrder
+UIList.Parent = Content
+
+local UIPadding = Instance.new("UIPadding")
+UIPadding.PaddingTop = UDim.new(0, 5)
+UIPadding.PaddingBottom = UDim.new(0, 5)
+UIPadding.Parent = Content
+
+local function CreateGlassButton(text, order)
+    local Btn = Instance.new("TextButton")
+    Btn.Size = UDim2.new(1, -4, 0, 36)
+    Btn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    Btn.BackgroundTransparency = 0.4
+    Btn.Text = ""
+    Btn.AutoButtonColor = false
+    Btn.LayoutOrder = order
+    Btn.Parent = Content
+    
+    local BtnCorner = Instance.new("UICorner")
+    BtnCorner.CornerRadius = UDim.new(0, 8)
+    BtnCorner.Parent = Btn
+    
+    local BtnStroke = Instance.new("UIStroke")
+    BtnStroke.Thickness = 1
+    BtnStroke.Transparency = 0.7
+    BtnStroke.Color = Color3.fromRGB(255, 255, 255)
+    BtnStroke.Parent = Btn
+    
+    local Label = Instance.new("TextLabel")
+    Label.Size = UDim2.new(1, 0, 1, 0)
+    Label.BackgroundTransparency = 1
+    Label.Text = text
+    Label.Font = Enum.Font.GothamMedium
+    Label.TextSize = 12
+    Label.TextColor3 = GlassTheme.TextWhite
+    Label.Parent = Btn
+   
+    Btn.MouseEnter:Connect(function()
+        TweenService:Create(Btn, TweenInfo.new(0.3), {BackgroundColor3 = Color3.fromRGB(50, 50, 50)}):Play()
+        TweenService:Create(BtnStroke, TweenInfo.new(0.3), {Transparency = 0.3, Color = GlassTheme.Accent}):Play()
+    end)
+    Btn.MouseLeave:Connect(function()
+        TweenService:Create(Btn, TweenInfo.new(0.3), {BackgroundColor3 = Color3.fromRGB(30, 30, 30)}):Play()
+        TweenService:Create(BtnStroke, TweenInfo.new(0.3), {Transparency = 0.7, Color = Color3.fromRGB(255, 255, 255)}):Play()
+    end)
+   
+    return Btn, Label, BtnStroke
+end
+
+local function CreateGlassSlider(name, min, max, default, order, callback, isDecimal)
+    local Container = Instance.new("Frame")
+    Container.Size = UDim2.new(1, -4, 0, 50)
+    Container.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+    Container.BackgroundTransparency = 0.5
+    Container.LayoutOrder = order
+    Container.Parent = Content
+   
+    Instance.new("UICorner", Container).CornerRadius = UDim.new(0, 8)
+    
+    local Title = Instance.new("TextLabel")
+    Title.Size = UDim2.new(1, -20, 0, 20)
+    Title.Position = UDim2.new(0, 10, 0, 5)
+    Title.BackgroundTransparency = 1
+    Title.Text = name
+    Title.Font = Enum.Font.Gotham
+    Title.TextSize = 11
+    Title.TextColor3 = GlassTheme.TextGray
+    Title.TextXAlignment = Enum.TextXAlignment.Left
+    Title.Parent = Container
+    
+    local ValueLabel = Instance.new("TextLabel")
+    ValueLabel.Size = UDim2.new(0, 50, 0, 20)
+    ValueLabel.Position = UDim2.new(1, -60, 0, 5)
+    ValueLabel.BackgroundTransparency = 1
+    ValueLabel.Text = tostring(default) .. (isDecimal and "s" or "")
+    ValueLabel.Font = Enum.Font.GothamBold
+    ValueLabel.TextSize = 11
+    ValueLabel.TextColor3 = GlassTheme.Accent
+    ValueLabel.TextXAlignment = Enum.TextXAlignment.Right
+    ValueLabel.Parent = Container
+    
+    local SliderBg = Instance.new("Frame")
+    SliderBg.Size = UDim2.new(1, -20, 0, 4)
+    SliderBg.Position = UDim2.new(0, 10, 0, 32)
+    SliderBg.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+    SliderBg.BorderSizePixel = 0
+    SliderBg.Parent = Container
+    
+    Instance.new("UICorner", SliderBg).CornerRadius = UDim.new(1, 0)
+    
+    local Fill = Instance.new("Frame")
+    local startPercent = (default - min) / (max - min)
+    Fill.Size = UDim2.new(startPercent, 0, 1, 0)
+    Fill.BackgroundColor3 = GlassTheme.Accent
+    Fill.BorderSizePixel = 0
+    Fill.Parent = SliderBg
+    
+    Instance.new("UICorner", Fill).CornerRadius = UDim.new(1, 0)
+    
+    local Knob = Instance.new("Frame")
+    Knob.Size = UDim2.new(0, 12, 0, 12)
+    Knob.AnchorPoint = Vector2.new(0.5, 0.5)
+    Knob.Position = UDim2.new(1, 0, 0.5, 0)
+    Knob.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    Knob.Parent = Fill
+    
+    Instance.new("UICorner", Knob).CornerRadius = UDim.new(1, 0)
+   
+    local Interact = Instance.new("TextButton")
+    Interact.Size = UDim2.new(1, 10, 2, 10)
+    Interact.Position = UDim2.new(0, -5, -0.5, 0)
+    Interact.BackgroundTransparency = 1
+    Interact.Text = ""
+    Interact.Parent = SliderBg
+    
+    local isDragging = false
+    
+    local function Update(input)
+        local pos = input.Position.X
+        local trackAbsPos = SliderBg.AbsolutePosition.X
+        local trackAbsSize = SliderBg.AbsoluteSize.X
+        local percent = math.clamp((pos - trackAbsPos) / trackAbsSize, 0, 1)
+       
+        TweenService:Create(Fill, TweenInfo.new(0.05), {Size = UDim2.new(percent, 0, 1, 0)}):Play()
+       
+        local value
+        if isDecimal then
+            value = math.floor((min + (max - min) * percent) * 10) / 10
+            ValueLabel.Text = value .. "s"
+        else
+            value = math.floor(min + (max - min) * percent)
+            ValueLabel.Text = tostring(value)
+        end
+        callback(value)
+    end
+    
+    Interact.MouseButton1Down:Connect(function(input) isDragging = true; Update(input) end)
+    
+    UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            isDragging = false
+            SaveConfig()
+        end
+    end)
+    
+    UserInputService.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement and isDragging then Update(input) end
+    end)
+end
+
+local LagBtn, LagLbl, LagStrk = CreateGlassButton("LAG SERVER: OFF [X]", 1)
+
+local function UpdateLagVisuals()
+    local isActive = Settings.LagEnabled or Settings.IsAutoLagging
+    if isActive then
+        LagLbl.Text = "LAG SERVER: ON [X]"
+        LagLbl.TextColor3 = GlassTheme.Accent
+        TweenService:Create(LagBtn, TweenInfo.new(0.3), {BackgroundColor3 = Color3.fromRGB(50, 40, 10)}):Play()
+        TweenService:Create(LagStrk, TweenInfo.new(0.3), {Color = GlassTheme.Accent, Transparency = 0}):Play()
+    else
+        LagLbl.Text = "LAG SERVER: OFF [X]"
+        LagLbl.TextColor3 = GlassTheme.TextWhite
+        TweenService:Create(LagBtn, TweenInfo.new(0.3), {BackgroundColor3 = Color3.fromRGB(30, 30, 30)}):Play()
+        TweenService:Create(LagStrk, TweenInfo.new(0.3), {Color = Color3.fromRGB(255, 255, 255), Transparency = 0.7}):Play()
+    end
+end
+
+ToggleLagVisuals = UpdateLagVisuals
+
+LagBtn.MouseButton1Click:Connect(function()
+    Settings.LagEnabled = not Settings.LagEnabled
+    UpdateLagVisuals()
+end)
+
+local DeathBtn, DeathLbl, DeathStrk = CreateGlassButton("ANTI-DEATH: " .. (Settings.AntiDeathEnabled and "ON" or "OFF"), 2)
+
+if Settings.AntiDeathEnabled then
+    DeathLbl.TextColor3 = GlassTheme.Accent
+    DeathStrk.Color = GlassTheme.Accent
+end
+
+DeathBtn.MouseButton1Click:Connect(function()
+    Settings.AntiDeathEnabled = not Settings.AntiDeathEnabled
+    SaveConfig()
+    if Settings.AntiDeathEnabled then
+        DeathLbl.Text = "ANTI-DEATH: ON"
+        DeathLbl.TextColor3 = GlassTheme.Accent
+        DeathStrk.Color = GlassTheme.Accent
+    else
+        DeathLbl.Text = "ANTI-DEATH: OFF"
+        DeathLbl.TextColor3 = GlassTheme.TextGray
+        DeathStrk.Color = Color3.fromRGB(150,150,150)
+    end
+end)
+
+local SpdBtn, SpdLbl, SpdStrk = CreateGlassButton("SPEED: OFF [F]", 3)
+
+local function UpdateSpeedVisuals()
+    if Settings.SpeedEnabled then
+        SpdLbl.Text = "SPEED: ON [F]"
+        SpdLbl.TextColor3 = GlassTheme.Accent
+        TweenService:Create(SpdBtn, TweenInfo.new(0.3), {BackgroundColor3 = Color3.fromRGB(50, 40, 10)}):Play()
+        TweenService:Create(SpdStrk, TweenInfo.new(0.3), {Color = GlassTheme.Accent, Transparency = 0}):Play()
+    else
+        SpdLbl.Text = "SPEED: OFF [F]"
+        SpdLbl.TextColor3 = GlassTheme.TextWhite
+        TweenService:Create(SpdBtn, TweenInfo.new(0.3), {BackgroundColor3 = Color3.fromRGB(30, 30, 30)}):Play()
+        TweenService:Create(SpdStrk, TweenInfo.new(0.3), {Color = Color3.fromRGB(255, 255, 255), Transparency = 0.7}):Play()
+    end
+end
+
+ToggleSpeedVisuals = UpdateSpeedVisuals
+
+SpdBtn.MouseButton1Click:Connect(function()
+    Settings.SpeedEnabled = not Settings.SpeedEnabled
+    UpdateSpeedVisuals()
+end)
+
+local ALagBtn, ALagLbl, ALagStrk = CreateGlassButton("AUTO LAG ON PROMPT: " .. (Settings.AutoLagOnPrompt and "ON" or "OFF"), 4)
+
+if Settings.AutoLagOnPrompt then
+    ALagLbl.TextColor3 = GlassTheme.Accent
+    ALagStrk.Color = GlassTheme.Accent
+end
+
+ALagBtn.MouseButton1Click:Connect(function()
+    Settings.AutoLagOnPrompt = not Settings.AutoLagOnPrompt
+    SaveConfig()
+    if Settings.AutoLagOnPrompt then
+        ALagLbl.Text = "AUTO LAG ON PROMPT: ON"
+        ALagLbl.TextColor3 = GlassTheme.Accent
+        TweenService:Create(ALagStrk, TweenInfo.new(0.3), {Color = GlassTheme.Accent}):Play()
+    else
+        ALagLbl.Text = "AUTO LAG ON PROMPT: OFF"
+        ALagLbl.TextColor3 = GlassTheme.TextWhite
+        TweenService:Create(ALagStrk, TweenInfo.new(0.3), {Color = Color3.fromRGB(255, 255, 255)}):Play()
+    end
+end)
+
+CreateGlassSlider("Packet Rate (Max 50)", 1, Settings.MaxPacketRate, Settings.PacketRate, 5, function(v) Settings.PacketRate = v end, false)
+CreateGlassSlider("Velocity Speed", Settings.MinSpeed, Settings.MaxSpeed, Settings.SpeedValue, 6, function(v) Settings.SpeedValue = v end, false)
+CreateGlassSlider("Lag Start Delay", 0.0, 2.0, Settings.LagStartDelay, 7, function(v) Settings.LagStartDelay = v end, true)
+CreateGlassSlider("Lag Duration", 0.1, 5.0, Settings.LagDuration, 8, function(v) Settings.LagDuration = v end, true)
+
+local Footer = Instance.new("TextLabel")
+Footer.Size = UDim2.new(1, 0, 0, 20)
+Footer.Position = UDim2.new(0, 0, 1, -25)
+Footer.BackgroundTransparency = 1
+Footer.Text = TargetRemote and ("Target: " .. TargetRemote.Name) or "Target: Scanning..."
+Footer.TextColor3 = Color3.fromRGB(100, 100, 100)
+Footer.Font = Enum.Font.Code
+Footer.TextSize = 10
+Footer.Parent = MainFrame
+
+local dragging, dragInput, dragStart, startPos
+MainFrame.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+        dragStart = input.Position
+        startPos = MainFrame.Position
+    end
+end)
+
+MainFrame.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement then dragInput = input end
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if input == dragInput and dragging then
+        local delta = input.Position - dragStart
+        TweenService:Create(MainFrame, TweenInfo.new(0.08), {Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)}):Play()
+    end
+end)
+
+UserInputService.InputBegan:Connect(function(input, processed)
+    if processed then return end
+    if input.KeyCode == Enum.KeyCode.X then
+        Settings.LagEnabled = not Settings.LagEnabled
+        if ToggleLagVisuals then ToggleLagVisuals() end
+    end
+    if input.KeyCode == Enum.KeyCode.F then
+        Settings.SpeedEnabled = not Settings.SpeedEnabled
+        if ToggleSpeedVisuals then ToggleSpeedVisuals() end
+    end
+end)
+
+RunService.Heartbeat:Connect(function()
+    handleAntiDeath()
+   
+    if Settings.SpeedEnabled then
+        local char = LocalPlayer.Character
+        local hum = char and char:FindFirstChild("Humanoid")
+        local root = char and char:FindFirstChild("HumanoidRootPart")
+        if hum and root and hum.MoveDirection.Magnitude > 0 then
+            root.Velocity = Vector3.new(
+                hum.MoveDirection.X * Settings.SpeedValue,
+                root.Velocity.Y,
+                hum.MoveDirection.Z * Settings.SpeedValue
+            )
+        end
+    end
+   
+    local shouldLag = Settings.LagEnabled or Settings.IsAutoLagging
+    if shouldLag and TargetRemote and not isOnMyCashPad() then
+        local payload = string.rep("X", 2000)
+        for i = 1, Settings.PacketRate do
+            pcall(function() TargetRemote:FireServer("d80e2217-36b8-4bdc-9a46-2281c6f70b28", payload) end)
+        end
+    end
+   
+    if shouldLag and isOnMyCashPad() then
+        Settings.LagEnabled = false
+        Settings.IsAutoLagging = false
+        if ToggleLagVisuals then ToggleLagVisuals() end
+    end
+end)
+
+RunService.RenderStepped:Connect(handleAntiDeath)
