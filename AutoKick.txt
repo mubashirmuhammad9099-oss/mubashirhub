@@ -22,7 +22,7 @@ end
 
 -- ===== SETTINGS =====
 local KEYWORD = "you stole"
-local KICK_MESSAGE = "Discord@rznnq"
+local KICK_MESSAGE = "mubashirs instant kick"
 local POS_FILE = "mubashir_autokick_ui_pos.json"
 
 local enabled = true
@@ -178,3 +178,4 @@ pcall(function()
 end)
 
 print("[Mubashir] AutoKick loaded successfully")
+
