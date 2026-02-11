@@ -1,0 +1,150 @@
+-- Tigy's FPS Devour (AUTO-EXEC SAFE)
+
+task.spawn(function()
+    -- wait for game
+    if not game:IsLoaded() then
+        game.Loaded:Wait()
+    end
+
+    local Players = game:GetService("Players")
+    local Lighting = game:GetService("Lighting")
+    local CoreGui = game:GetService("CoreGui")
+
+    -- wait for LocalPlayer
+    local LocalPlayer = Players.LocalPlayer
+    while not LocalPlayer do
+        task.wait()
+        LocalPlayer = Players.LocalPlayer
+    end
+
+    -- wait for character + backpack
+    local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+    local Backpack = LocalPlayer:WaitForChild("Backpack")
+
+    -- small delay for Potassium
+    task.wait(1)
+
+    -- remove old UI if exists
+    local oldUI = CoreGui:FindFirstChild("TigyFPSDevourUI")
+    if oldUI then
+        oldUI:Destroy()
+    end
+
+    -- FPS boosts
+    Lighting.GlobalShadows = false
+    Lighting.EnvironmentDiffuseScale = 0
+    Lighting.EnvironmentSpecularScale = 0
+
+    for _, effect in ipairs(Lighting:GetChildren()) do
+        if effect:IsA("PostEffect") then
+            effect.Enabled = false
+        end
+    end
+
+    for _, d in ipairs(workspace:GetDescendants()) do
+        if d:IsA("ParticleEmitter") then
+            d.Enabled = false
+        end
+    end
+
+    -- remove accessories
+    local function stripAccessories(model)
+        for _, child in ipairs(model:GetChildren()) do
+            if child:IsA("Accessory") then
+                child:Destroy()
+            end
+        end
+
+        model.ChildAdded:Connect(function(child)
+            if child:IsA("Accessory") then
+                child:Destroy()
+            end
+        end)
+    end
+
+    for _, d in ipairs(workspace:GetDescendants()) do
+        if d:IsA("Humanoid") and d.Parent then
+            stripAccessories(d.Parent)
+        end
+    end
+
+    workspace.DescendantAdded:Connect(function(d)
+        if d:IsA("Humanoid") and d.Parent then
+            stripAccessories(d.Parent)
+        end
+    end)
+
+    -- UI
+    local ScreenGui = Instance.new("ScreenGui")
+    ScreenGui.Name = "TigyFPSDevourUI"
+    ScreenGui.ResetOnSpawn = false
+    ScreenGui.Parent = CoreGui
+
+    local Frame = Instance.new("Frame", ScreenGui)
+    Frame.Size = UDim2.new(0, 340, 0, 160)
+    Frame.Position = UDim2.new(0.5, -170, 0.5, -80)
+    Frame.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
+    Frame.BorderSizePixel = 0
+    Frame.Active = true
+    Frame.Draggable = true
+
+    Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 18)
+
+    local Title = Instance.new("TextLabel", Frame)
+    Title.Size = UDim2.new(1, -20, 0, 40)
+    Title.Position = UDim2.new(0, 10, 0, 10)
+    Title.BackgroundTransparency = 1
+    Title.Text = "Tigy’s FPS Devour"
+    Title.Font = Enum.Font.GothamBlack
+    Title.TextSize = 20
+    Title.TextXAlignment = Enum.TextXAlignment.Left
+    Title.TextColor3 = Color3.new(1, 1, 1)
+
+    local Button = Instance.new("TextButton", Frame)
+    Button.Size = UDim2.new(1, -40, 0, 54)
+    Button.Position = UDim2.new(0, 20, 0, 80)
+    Button.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+    Button.Text = "FPS Devour (need auras)"
+    Button.Font = Enum.Font.GothamBold
+    Button.TextSize = 15
+    Button.TextColor3 = Color3.new(1, 1, 1)
+    Button.BorderSizePixel = 0
+    Button.AutoButtonColor = true
+
+    Instance.new("UICorner", Button).CornerRadius = UDim.new(0, 14)
+
+    Button.MouseButton1Click:Connect(function()
+        Button.Text = "WORKING..."
+        Button.AutoButtonColor = false
+
+        Character = LocalPlayer.Character
+        if not Character then return end
+
+        local Humanoid = Character:FindFirstChildOfClass("Humanoid")
+        if not Humanoid then return end
+
+        local Tool = Backpack:FindFirstChild("Quantum Cloner")
+        if not Tool then
+            Button.Text = "Tool not found"
+            Button.AutoButtonColor = true
+            return
+        end
+
+        Humanoid:EquipTool(Tool)
+        task.wait()
+
+        for _, t in ipairs(Backpack:GetChildren()) do
+            if t:IsA("Tool") then
+                t.Parent = Character
+            end
+        end
+
+        task.wait()
+        Tool:Activate()
+
+        task.delay(0.1, function()
+            Button.Text = "FPS Devour (need auras)"
+            Button.AutoButtonColor = true
+        end)
+    end)
+end)
