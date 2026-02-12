@@ -1,7 +1,7 @@
--- Tigy's FPS Devour (AUTO-EXEC SAFE)
+-- Tigy's FPS Devour (AUTO-EXEC SAFE + SAVE POS)
 
 task.spawn(function()
-    -- wait for game
+
     if not game:IsLoaded() then
         game.Loaded:Wait()
     end
@@ -9,22 +9,20 @@ task.spawn(function()
     local Players = game:GetService("Players")
     local Lighting = game:GetService("Lighting")
     local CoreGui = game:GetService("CoreGui")
+    local HttpService = game:GetService("HttpService")
 
-    -- wait for LocalPlayer
     local LocalPlayer = Players.LocalPlayer
     while not LocalPlayer do
         task.wait()
         LocalPlayer = Players.LocalPlayer
     end
 
-    -- wait for character + backpack
     local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
     local Backpack = LocalPlayer:WaitForChild("Backpack")
 
-    -- small delay for Potassium
     task.wait(1)
 
-    -- remove old UI if exists
+    -- remove old UI
     local oldUI = CoreGui:FindFirstChild("TigyFPSDevourUI")
     if oldUI then
         oldUI:Destroy()
@@ -47,14 +45,12 @@ task.spawn(function()
         end
     end
 
-    -- remove accessories
     local function stripAccessories(model)
         for _, child in ipairs(model:GetChildren()) do
             if child:IsA("Accessory") then
                 child:Destroy()
             end
         end
-
         model.ChildAdded:Connect(function(child)
             if child:IsA("Accessory") then
                 child:Destroy()
@@ -74,6 +70,29 @@ task.spawn(function()
         end
     end)
 
+    -- SAVE SYSTEM
+    local SaveFile = "tigyfpsdevour_pos.json"
+
+    local function SavePos(frame)
+        if writefile then
+            local data = {
+                X = frame.Position.X.Scale,
+                Y = frame.Position.Y.Scale,
+                OX = frame.Position.X.Offset,
+                OY = frame.Position.Y.Offset
+            }
+            writefile(SaveFile, HttpService:JSONEncode(data))
+        end
+    end
+
+    local function LoadPos()
+        if readfile and isfile and isfile(SaveFile) then
+            local data = HttpService:JSONDecode(readfile(SaveFile))
+            return UDim2.new(data.X, data.OX, data.Y, data.OY)
+        end
+        return UDim2.new(0.5, -170, 0.5, -80)
+    end
+
     -- UI
     local ScreenGui = Instance.new("ScreenGui")
     ScreenGui.Name = "TigyFPSDevourUI"
@@ -82,13 +101,18 @@ task.spawn(function()
 
     local Frame = Instance.new("Frame", ScreenGui)
     Frame.Size = UDim2.new(0, 340, 0, 160)
-    Frame.Position = UDim2.new(0.5, -170, 0.5, -80)
+    Frame.Position = LoadPos()
     Frame.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
     Frame.BorderSizePixel = 0
     Frame.Active = true
     Frame.Draggable = true
 
     Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 18)
+
+    -- SAVE when dragged
+    Frame:GetPropertyChangedSignal("Position"):Connect(function()
+        SavePos(Frame)
+    end)
 
     local Title = Instance.new("TextLabel", Frame)
     Title.Size = UDim2.new(1, -20, 0, 40)
@@ -142,9 +166,10 @@ task.spawn(function()
         task.wait()
         Tool:Activate()
 
-        task.delay(0.1, function()
+        task.delay(0.2, function()
             Button.Text = "FPS Devour (need auras)"
             Button.AutoButtonColor = true
         end)
     end)
+
 end)
