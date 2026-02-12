@@ -1,4 +1,4 @@
--- TK AutoJoiner (Auto-Exec Safe)
+-- TK AutoJoiner (Auto-Exec + Save Position)
 
 task.spawn(function()
 
@@ -19,33 +19,55 @@ task.spawn(function()
 
     local PlayerGui = player:WaitForChild("PlayerGui")
 
-    -- Remove old GUI if exists
+    -- FILE NAME FOR POSITION
+    local POS_FILE = "TK_AutoJoiner_Pos.json"
+
+    -- Remove old GUI
     local old = PlayerGui:FindFirstChild("TK_Autojoiner")
-    if old then
-        old:Destroy()
-    end
+    if old then old:Destroy() end
 
     -- GUI
     local TKAutojoiner = Instance.new("ScreenGui")
     TKAutojoiner.Name = "TK_Autojoiner"
     TKAutojoiner.ResetOnSpawn = false
     TKAutojoiner.IgnoreGuiInset = true
-    TKAutojoiner.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
     TKAutojoiner.Parent = PlayerGui
 
     local Screen = Instance.new("Frame", TKAutojoiner)
     Screen.Size = UDim2.fromScale(1,1)
     Screen.BackgroundTransparency = 1
 
-    -- MAIN FRAME
     local Main = Instance.new("Frame", Screen)
     Main.Size = UDim2.new(0,165,0,220)
     Main.AnchorPoint = Vector2.new(0.5,0.5)
     Main.Position = UDim2.fromScale(0.5,0.5)
     Main.BackgroundColor3 = Color3.fromRGB(45,45,45)
     Main.Active = true
-
     Instance.new("UICorner",Main).CornerRadius = UDim.new(0,3)
+
+    -- LOAD SAVED POSITION
+    if isfile and isfile(POS_FILE) then
+        local data = HttpService:JSONDecode(readfile(POS_FILE))
+        Main.Position = UDim2.new(
+            data.XScale,
+            data.XOffset,
+            data.YScale,
+            data.YOffset
+        )
+    end
+
+    -- SAVE FUNCTION
+    local function savePosition()
+        if writefile then
+            local data = {
+                XScale = Main.Position.X.Scale,
+                XOffset = Main.Position.X.Offset,
+                YScale = Main.Position.Y.Scale,
+                YOffset = Main.Position.Y.Offset
+            }
+            writefile(POS_FILE, HttpService:JSONEncode(data))
+        end
+    end
 
     -- TITLE
     local Title = Instance.new("TextLabel", Main)
@@ -86,7 +108,7 @@ task.spawn(function()
     WaterMark.TextSize = 18
     WaterMark.TextColor3 = Color3.fromRGB(65,122,255)
 
-    -- DRAG SYSTEM
+    -- DRAG SYSTEM + SAVE
     local dragging = false
     local dragStart, startPos
 
@@ -100,6 +122,7 @@ task.spawn(function()
             input.Changed:Connect(function()
                 if input.UserInputState == Enum.UserInputState.End then
                     dragging = false
+                    savePosition() -- SAVE WHEN DRAG ENDS
                 end
             end)
         end
@@ -156,7 +179,6 @@ task.spawn(function()
 
         if success and response then
             local data = HttpService:JSONDecode(response)
-
             if data and data.data then
                 for _,v in pairs(data.data) do
                     if v.playing < v.maxPlayers then
