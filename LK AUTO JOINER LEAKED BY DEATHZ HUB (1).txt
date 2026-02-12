@@ -1,0 +1,181 @@
+-- TK AutoJoiner (Auto-Exec Safe)
+
+task.spawn(function()
+
+    if not game:IsLoaded() then
+        game.Loaded:Wait()
+    end
+
+    local Players = game:GetService("Players")
+    local UIS = game:GetService("UserInputService")
+    local TeleportService = game:GetService("TeleportService")
+    local HttpService = game:GetService("HttpService")
+
+    local player = Players.LocalPlayer
+    while not player do
+        task.wait()
+        player = Players.LocalPlayer
+    end
+
+    local PlayerGui = player:WaitForChild("PlayerGui")
+
+    -- Remove old GUI if exists
+    local old = PlayerGui:FindFirstChild("TK_Autojoiner")
+    if old then
+        old:Destroy()
+    end
+
+    -- GUI
+    local TKAutojoiner = Instance.new("ScreenGui")
+    TKAutojoiner.Name = "TK_Autojoiner"
+    TKAutojoiner.ResetOnSpawn = false
+    TKAutojoiner.IgnoreGuiInset = true
+    TKAutojoiner.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    TKAutojoiner.Parent = PlayerGui
+
+    local Screen = Instance.new("Frame", TKAutojoiner)
+    Screen.Size = UDim2.fromScale(1,1)
+    Screen.BackgroundTransparency = 1
+
+    -- MAIN FRAME
+    local Main = Instance.new("Frame", Screen)
+    Main.Size = UDim2.new(0,165,0,220)
+    Main.AnchorPoint = Vector2.new(0.5,0.5)
+    Main.Position = UDim2.fromScale(0.5,0.5)
+    Main.BackgroundColor3 = Color3.fromRGB(45,45,45)
+    Main.Active = true
+
+    Instance.new("UICorner",Main).CornerRadius = UDim.new(0,3)
+
+    -- TITLE
+    local Title = Instance.new("TextLabel", Main)
+    Title.Size = UDim2.new(1,0,0,40)
+    Title.Position = UDim2.new(0,0,0,5)
+    Title.BackgroundTransparency = 1
+    Title.Font = Enum.Font.GothamBold
+    Title.Text = "TK AutoJoiner"
+    Title.TextColor3 = Color3.fromRGB(65,122,255)
+    Title.TextSize = 14
+
+    -- BUTTON CREATOR
+    local function createButton(text,posY)
+        local b = Instance.new("TextButton", Main)
+        b.Size = UDim2.new(0,148,0,27)
+        b.Position = UDim2.new(0.05,0,posY,0)
+        b.BackgroundColor3 = Color3.fromRGB(66,66,66)
+        b.Font = Enum.Font.GothamBold
+        b.Text = text
+        b.TextColor3 = Color3.fromRGB(255,255,255)
+        b.TextSize = 14
+        Instance.new("UICorner",b).CornerRadius = UDim.new(0,3)
+        return b
+    end
+
+    local AutoJoin = createButton("AutoJoin",0.25)
+    local Mps = createButton("MPS : 20M/s",0.40)
+    local WatermarkBtn = createButton("Watermark",0.55)
+
+    -- WATERMARK
+    local WaterMark = Instance.new("TextLabel", Screen)
+    WaterMark.Size = UDim2.new(0,300,0,40)
+    WaterMark.Position = UDim2.fromScale(0.5,0.02)
+    WaterMark.AnchorPoint = Vector2.new(0.5,0)
+    WaterMark.BackgroundTransparency = 1
+    WaterMark.Text = "TK AutoJoiner | TikTok: FemboyHub"
+    WaterMark.Font = Enum.Font.GothamBold
+    WaterMark.TextSize = 18
+    WaterMark.TextColor3 = Color3.fromRGB(65,122,255)
+
+    -- DRAG SYSTEM
+    local dragging = false
+    local dragStart, startPos
+
+    Main.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 
+        or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            dragStart = input.Position
+            startPos = Main.Position
+
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
+            end)
+        end
+    end)
+
+    UIS.InputChanged:Connect(function(input)
+        if dragging and 
+        (input.UserInputType == Enum.UserInputType.MouseMovement 
+        or input.UserInputType == Enum.UserInputType.Touch) then
+
+            local delta = input.Position - dragStart
+
+            Main.Position = UDim2.new(
+                startPos.X.Scale,
+                startPos.X.Offset + delta.X,
+                startPos.Y.Scale,
+                startPos.Y.Offset + delta.Y
+            )
+        end
+    end)
+
+    -- MPS SWITCH
+    local mpsValues = {10,20,50,100,500}
+    local currentIndex = 2
+
+    Mps.MouseButton1Click:Connect(function()
+        currentIndex += 1
+        if currentIndex > #mpsValues then
+            currentIndex = 1
+        end
+        Mps.Text = "MPS : "..mpsValues[currentIndex].."M/s"
+    end)
+
+    -- WATERMARK TOGGLE
+    local watermarkVisible = true
+    WatermarkBtn.MouseButton1Click:Connect(function()
+        watermarkVisible = not watermarkVisible
+        WaterMark.Visible = watermarkVisible
+    end)
+
+    -- AUTOJOIN RANDOM SERVER
+    AutoJoin.MouseButton1Click:Connect(function()
+
+        local PLACE_ID = 109983668079237
+        local servers = {}
+
+        local success, response = pcall(function()
+            return game:HttpGet(
+                "https://games.roblox.com/v1/games/"..
+                PLACE_ID..
+                "/servers/Public?sortOrder=Asc&limit=100"
+            )
+        end)
+
+        if success and response then
+            local data = HttpService:JSONDecode(response)
+
+            if data and data.data then
+                for _,v in pairs(data.data) do
+                    if v.playing < v.maxPlayers then
+                        table.insert(servers,v.id)
+                    end
+                end
+            end
+        end
+
+        if #servers > 0 then
+            local randomServer = servers[math.random(1,#servers)]
+            TeleportService:TeleportToPlaceInstance(
+                PLACE_ID,
+                randomServer,
+                player
+            )
+        else
+            warn("No free servers found.")
+        end
+    end)
+
+end)
